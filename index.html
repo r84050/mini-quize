@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Mini Quize</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { background: #0E1621; overflow-x: hidden; }
+    ::-webkit-scrollbar { width: 0px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const ADSGRAM_BLOCK_ID = "YOUR_BLOCK_ID";
+
+    const questions = [
+      { category: "Colors",  question: "What's your fav color?",  choices: ["Red", "Blue", "Yellow"],          answer: "Red" },
+      { category: "Cars",    question: "What's your fav car?",    choices: ["Toyota", "Lambo", "BMW"],          answer: "BMW" },
+      { category: "Brands",  question: "What's your fav brand?",  choices: ["LV", "KmRii", "LGB"],             answer: "KmRii" },
+      { category: "Fruits",  question: "What's your fav fruit?",  choices: ["Apple", "Grape", "Watermelon"],   answer: "Watermelon" },
+      { category: "Hobbies", question: "What's your fav hobby?",  choices: ["Coding", "Shopping", "Hustling"], answer: "Shopping" },
+    ];
+
+    const getRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    function getResult(question, compChoice) {
+      if (question.answer === compChoice)
+        return { correct: true, msg: "Computer got it right! 🎉" };
+      return { correct: false, msg: `Wrong! Correct: ${question.answer}` };
+    }
+
+    const C = {
+      bg:            "#0E1621",
+      card:          "#17212B",
+      primary:       "#2AABEE",
+      primaryDim:    "rgba(42,171,238,0.13)",
+      primaryBorder: "rgba(42,171,238,0.32)",
+      textPrimary:   "#FFFFFF",
+      textSecondary: "#8A9BA8",
+      success:       "#4DDB6B",
+      successDim:    "rgba(77,219,107,0.12)",
+      error:         "#E53935",
+      errorDim:      "rgba(229,57,53,0.12)",
+      divider:       "rgba(255,255,255,0.06)",
+    };
+
+    function useAdsgram() {
+      const ref = useRef(null);
+      useEffect(() => {
+        if (window.Adsgram) {
+          ref.current = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
+        }
+      }, []);
+      async function showAd(onDone) {
+        if (!ref.current) { onDone(); return; }
+        try { await ref.current.show(); onDone(); }
+        catch (e) { onDone(); }
+      }
+      return showAd;
+    }
+
+    const S = {
+      root: { minHeight: "100vh", background: C.bg, display: "flex", flexDirection: "column", fontFamily: "-apple-system, 'SF Pro Display', BlinkMacSystemFont, sans-serif", color: C.textPrimary, maxWidth: 480, margin: "0 auto" },
+      topBar: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px 12px", background: C.card, borderBottom: `1px solid ${C.divider}`, position: "sticky", top: 0, zIndex: 10 },
+      topBarTitle: { fontSize: 17, fontWeight: 700, color: C.textPrimary },
+      backBtn: { background: "none", border: "none", color: C.primary, fontSize: 22, cursor: "pointer", padding: "0 4px" },
+      primaryBtn: { width: "100%", padding: 15, background: C.primary, border: "none", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.3 },
+    };
+
+    function HomeScreen({ onPlay }) {
+      const tg = window.Telegram?.WebApp;
+      const user = tg?.initDataUnsafe?.user;
+      return (
+        <div style={S.root}>
+          <div style={S.topBar}><span style={S.topBarTitle}>Mini Quize</span></div>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 24px 60px" }}>
+            <div style={{ width: 84, height: 84, borderRadius: 26, background: C.primaryDim, border: `1.5px solid ${C.primaryBorder}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, marginBottom: 20 }}>🎯</div>
+            <div style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>{user ? `Hey, ${user.first_name}! 👋` : "Mini Quize"}</div>
+            <div style={{ fontSize: 14, color: C.textSecondary, textAlign: "center", lineHeight: 1.65, marginBottom: 36 }}>5 questions. Predict what the<br />computer will pick and score!</div>
+            <div style={{ display: "flex", gap: 12, marginBottom: 36, width: "100%" }}>
+              {[["🎲","Random","Questions"],["🤖","Computer","Picks"],["🏆","Track","Score"]].map(([icon,t,s]) => (
+                <div key={t} style={{ flex: 1, background: C.card, borderRadius: 14, padding: "14px 10px", textAlign: "center" }}>
+                  <div style={{ fontSize: 22, marginBottom: 6 }}>{icon}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600 }}>{t}</div>
+                  <div style={{ fontSize: 10, color: C.textSecondary, marginTop: 2 }}>{s}</div>
+                </div>
+              ))}
+            </div>
+            <button onClick={onPlay} style={S.primaryBtn}>📺 Watch Ad &amp; Play</button>
+            <div style={{ fontSize: 11, color: C.textSecondary, marginTop: 10, textAlign: "center" }}>Watch a short ad to unlock the quiz</div>
+          </div>
+        </div>
+      );
+    }
+
+    function GameScreen({ onFinish, onBack }) {
+      const [qIndex, setQIndex]     = useState(0);
+      const [currentQ, setCurrentQ] = useState(() => getRandom(questions));
+      const [compChoice, setCompChoice] = useState(null);
+      const [result, setResult]     = useState(null);
+      const [score, setScore]       = useState({ correct: 0, wrong: 0 });
+      const [animKey, setAnimKey]   = useState(0);
+
+      function handleGuess(choice) {
+        if (result) return;
+        const comp = getRandom(currentQ.choices);
+        const res  = getResult(currentQ, comp);
+        setCompChoice(comp);
+        setResult(res);
+        if (res.correct) setScore(s => ({ ...s, correct: s.correct + 1 }));
+        else             setScore(s => ({ ...s, wrong: s.wrong + 1 }));
+      }
+
+      function handleNext() {
+        const nextIndex = qIndex + 1;
+        if (nextIndex >= 5) { onFinish(score); return; }
+        setQIndex(nextIndex);
+        setCurrentQ(getRandom(questions));
+        setCompChoice(null);
+        setResult(null);
+        setAnimKey(k => k + 1);
+      }
+
+      return (
+        <div style={S.root}>
+          <div style={S.topBar}>
+            <button onClick={onBack} style={S.backBtn}>←</button>
+            <span style={S.topBarTitle}>Mini Quize</span>
+            <span style={{ fontSize: 13, color: C.textSecondary, fontWeight: 600 }}>{qIndex + 1} / 5</span>
+          </div>
+          <div style={{ height: 3, background: C.card }}>
+            <div style={{ height: "100%", width: `${((qIndex + (result ? 1 : 0)) / 5) * 100}%`, background: C.primary, transition: "width 0.4s ease" }} />
+          </div>
+          <div style={{ flex: 1, overflowY: "auto", padding: "18px 16px 32px" }}>
+            <style>{`@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+            <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
+              {[[`✅ ${score.correct}`, C.success, C.successDim], [`❌ ${score.wrong}`, C.error, C.errorDim]].map(([label, color, dim]) => (
+                <div key={label} style={{ flex: 1, background: dim, border: `1px solid ${color}30`, borderRadius: 12, padding: "10px 14px", textAlign: "center" }}>
+                  <span style={{ fontSize: 18, fontWeight: 700, color }}>{label}</span>
+                </div>
+              ))}
+            </div>
+            <div key={animKey} style={{ background: C.card, borderRadius: 18, padding: 20, marginBottom: 14, animation: "fadeUp 0.3s ease" }}>
+              <div style={{ display: "inline-flex", background: C.primaryDim, borderRadius: 8, padding: "4px 10px", marginBottom: 12 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: C.primary, letterSpacing: 1, textTransform: "uppercase" }}>{currentQ.category}</span>
+              </div>
+              <div style={{ fontSize: 19, fontWeight: 700, lineHeight: 1.4, marginBottom: 8 }}>{currentQ.question}</div>
+              <div style={{ fontSize: 12, color: C.textSecondary }}>🤖 Predict what the computer picks</div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {currentQ.choices.map((choice) => {
+                let bg = C.card, border = `1px solid ${C.divider}`, color = C.textPrimary, tag = null;
+                if (result) {
+                  if (choice === compChoice && result.correct)  { bg = C.successDim; border = `1px solid ${C.success}`; color = C.success; tag = "computer ✓"; }
+                  else if (choice === compChoice)               { bg = C.errorDim;   border = `1px solid ${C.error}`;   color = C.error;   tag = "computer picked"; }
+                  else if (choice === currentQ.answer)          { bg = C.primaryDim; border = `1px solid ${C.primaryBorder}`; color = C.primary; tag = "correct answer"; }
+                  else { color = C.textSecondary; }
+                }
+                return (
+                  <button key={choice} onClick={() => handleGuess(choice)} disabled={!!result}
+                    style={{ background: bg, border, borderRadius: 14, padding: "15px 18px", color, fontSize: 15, fontWeight: 600, textAlign: "left", cursor: result ? "default" : "pointer", transition: "all 0.18s", display: "flex", justifyContent: "space-between", alignItems: "center", fontFamily: "inherit" }}>
+                    <span>{choice}</span>
+                    {tag && <span style={{ fontSize: 11, opacity: 0.8, fontWeight: 400 }}>{tag}</span>}
+                  </button>
+                );
+              })}
+            </div>
+            {result && (
+              <div style={{ marginTop: 14, padding: "14px 18px", borderRadius: 14, background: result.correct ? C.successDim : C.errorDim, border: `1px solid ${result.correct ? C.success : C.error}40`, fontSize: 14, fontWeight: 600, color: result.correct ? C.success : C.error, animation: "fadeUp 0.25s ease" }}>
+                {result.msg}
+              </div>
+            )}
+            {result && (
+              <button onClick={handleNext} style={{ ...S.primaryBtn, marginTop: 14 }}>
+                {qIndex + 1 >= 5 ? "See Results 🏆" : "Next Question →"}
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function ResultScreen({ score, onPlayAgain }) {
+      const total    = score.correct + score.wrong;
+      const accuracy = total > 0 ? Math.round((score.correct / total) * 100) : 0;
+      const emoji    = accuracy >= 80 ? "🏆" : accuracy >= 50 ? "👍" : "😅";
+      const label    = accuracy >= 80 ? "Excellent!" : accuracy >= 50 ? "Not bad!" : "Keep trying!";
+      return (
+        <div style={S.root}>
+          <div style={S.topBar}><span style={S.topBarTitle}>Results</span></div>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "0 24px 60px" }}>
+            <div style={{ fontSize: 64, marginBottom: 14 }}>{emoji}</div>
+            <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 6 }}>{label}</div>
+            <div style={{ fontSize: 14, color: C.textSecondary, marginBottom: 30 }}>You predicted {accuracy}% correctly</div>
+            <div style={{ background: C.card, borderRadius: 18, padding: "20px 24px", width: "100%", marginBottom: 28 }}>
+              {[["Total Questions", 5, C.textPrimary],["✅ Correct", score.correct, C.success],["❌ Wrong", score.wrong, C.error],["Accuracy", `${accuracy}%`, C.primary]].map(([lbl, val, color], i, arr) => (
+                <div key={lbl} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: i < arr.length-1 ? 14 : 0, marginBottom: i < arr.length-1 ? 14 : 0, borderBottom: i < arr.length-1 ? `1px solid ${C.divider}` : "none" }}>
+                  <span style={{ fontSize: 14, color: C.textSecondary }}>{lbl}</span>
+                  <span style={{ fontSize: 16, fontWeight: 700, color }}>{val}</span>
+                </div>
+              ))}
+            </div>
+            <button onClick={onPlayAgain} style={S.primaryBtn}>📺 Watch Ad &amp; Play Again</button>
+            <div style={{ fontSize: 11, color: C.textSecondary, marginTop: 10, textAlign: "center" }}>Watch a short ad to play again</div>
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [screen, setScreen]       = useState("home");
+      const [finalScore, setFinalScore] = useState(null);
+      const showAd = useAdsgram();
+
+      useEffect(() => {
+        const tg = window.Telegram?.WebApp;
+        if (tg) { tg.ready(); tg.expand(); }
+      }, []);
+
+      return (
+        <>
+          {screen === "home"   && <HomeScreen   onPlay={() => showAd(() => setScreen("game"))} />}
+          {screen === "game"   && <GameScreen   onFinish={(s) => { setFinalScore(s); setScreen("result"); }} onBack={() => setScreen("home")} />}
+          {screen === "result" && <ResultScreen score={finalScore} onPlayAgain={() => showAd(() => { setFinalScore(null); setScreen("game"); })} />}
+        </>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
